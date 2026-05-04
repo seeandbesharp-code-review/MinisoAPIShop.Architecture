@@ -2,6 +2,7 @@
 using Entities;
 using Microsoft.AspNetCore.Mvc;
 using Service;
+using WebApiShop.Attributes;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -36,18 +37,21 @@ namespace WebApiShop.Controllers
         }
 
         // POST api/<CategoryController>
+        [AuthorizeAdmin]
         [HttpPost]
         public void Post([FromBody] string value)
         {
         }
 
         // PUT api/<CategoryController>/5
+        [AuthorizeAdmin]
         [HttpPut("{id}")]
         public void Put(int id, [FromBody] string value)
         {
         }
 
         // DELETE api/<CategoryController>/5
+        [AuthorizeAdmin]
         [HttpDelete("{id}")]
         public void Delete(int id)
         {

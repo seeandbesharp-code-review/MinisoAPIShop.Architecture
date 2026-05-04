@@ -59,6 +59,9 @@ namespace DTOs
     (
          int UserId,
 
+         [Required, EmailAddress] 
+        string Email,
+
          [Required]
         string  Role,
 

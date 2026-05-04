@@ -1,6 +1,8 @@
 ﻿using DTOs;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Service;
+using WebApiShop.Attributes;
 
 
 namespace WebAPIShop.Controllers
@@ -45,10 +47,12 @@ namespace WebAPIShop.Controllers
             try
             {
                 var newUser = await _userService.AddUser(userRegisterDto);
-                _logger.LogInformation("New user registration: Name: {FullName}, Email: {Email}",
-                    userRegisterDto.FirstName + " " + userRegisterDto.LastName, userRegisterDto.Email);
                 if (newUser == null)
                     return BadRequest("שגיאה ביצירת המשתמש.");
+                var token = _userService.GenerateToken(newUser);
+                AppendSecretCookie(token);
+                _logger.LogInformation("New user registration: Name: {FullName}, Email: {Email}",
+                    userRegisterDto.FirstName + " " + userRegisterDto.LastName, userRegisterDto.Email);
                 return CreatedAtAction(nameof(Get), new { id = newUser.UserId }, newUser);
             }
             catch(Exception ex)
@@ -62,13 +66,28 @@ namespace WebAPIShop.Controllers
         {
             var user = await _userService.LoginUser(loginDto);
             if (user != null) {
+                var token = _userService.GenerateToken(user);
+                AppendSecretCookie(token);
+                _logger.LogInformation("User logged in successfully: Name: {FullName}", $"{user.FirstName} {user.LastName}");
                 return Ok(user);
-                _logger.LogInformation("User registered successfully: Name: {FullName}, Email: {Email}", $"{user.FirstName} {user.LastName}", user.Role);
             }
             return Unauthorized();
         }
 
+        private void AppendSecretCookie(string token)
+        {
+            var cookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict,
+                Expires = DateTime.Now.AddDays(1)
+            };
+            Response.Cookies.Append("X-Access-Token", token, cookieOptions);
+        }
+
         // PUT api/<UsersController>/5
+        [Authorize]
         [HttpPut("{id}")]
         public async Task<IActionResult> Put(int id, [FromBody] UserUpdateDTO userUpdateDto)
         {
@@ -79,6 +98,7 @@ namespace WebAPIShop.Controllers
         }
 
         // DELETE api/<UsersController>/5
+        [AuthorizeAdmin]
         [HttpDelete("{id}")]
         public void Delete(int id)
         {

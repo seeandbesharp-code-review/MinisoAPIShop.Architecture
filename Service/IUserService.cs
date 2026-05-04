@@ -5,6 +5,7 @@ namespace Service
 {
     public interface IUserService
     {
+        string GenerateToken(UserReadDTO user);
         Task<UserReadDTO> GetUserById(int id);
 
         Task<UserReadDTO> AddUser(UserRegisterDTO userRegisterDto);

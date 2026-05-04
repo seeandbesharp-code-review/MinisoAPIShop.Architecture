@@ -6,7 +6,7 @@ namespace Service
     public interface IOrderService
     {
 
-        Task<IEnumerable<Order>> GetAllOrdersAsync();
+        Task<IEnumerable<OrderReadDTO>> GetAllOrdersAsync();
 
         Task<IEnumerable<OrderReadDTO>> GetOrdersByUserIdAsync(int userId);
 

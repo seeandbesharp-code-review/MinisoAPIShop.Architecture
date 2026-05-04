@@ -2,7 +2,12 @@
 using DTOs;
 using Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
 using Repository;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 using Zxcvbn;
 
 namespace Service
@@ -12,13 +17,39 @@ namespace Service
         private readonly IUserRepository _userRepository;
         private readonly IPasswordService _passwordService;
         private readonly IMapper _mapper;
+        private readonly IConfiguration _configuration;
 
-
-        public UserService(IUserRepository userRepository, IPasswordService passwordService, IMapper mapper)
+        public UserService(IUserRepository userRepository, IPasswordService passwordService, IMapper mapper, IConfiguration configuration)
         {
             _userRepository = userRepository;
             _passwordService = passwordService;
             _mapper = mapper;
+            _configuration = configuration;
+        }
+
+
+        public string GenerateToken(UserReadDTO user)
+        {
+            string userRole = (user.Role?.ToLower() == "admin") ? "Admin" : "User";
+            var claims = new List<Claim>
+        {
+            new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
+            new Claim(ClaimTypes.Email, user.Email),
+            new Claim(ClaimTypes.Role, userRole)
+        };
+
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+            var token = new JwtSecurityToken(
+                issuer: _configuration["Jwt:Issuer"],
+                audience: _configuration["Jwt:Audience"],
+                claims: claims,
+                expires: DateTime.Now.AddDays(1),
+                signingCredentials: creds
+            );
+
+            return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
         public async Task<UserReadDTO> GetUserById(int id)

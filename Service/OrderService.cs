@@ -2,15 +2,9 @@
 using DTOs;
 using Entities;
 using Order = Entities.Order;
-using NuGet.Protocol.Core.Types;
 using Repository;
 using StackExchange.Redis;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 
 namespace Service
@@ -30,25 +24,26 @@ namespace Service
             _configuration = configuration;
         }
 
-        public async Task<IEnumerable<Order>> GetAllOrdersAsync()
+        public async Task<IEnumerable<OrderReadDTO>> GetAllOrdersAsync()
         {
             string cacheKey = "orders_all";
-            
+
             var cachedOrders = await _cache.StringGetAsync(cacheKey);
             if (!cachedOrders.IsNullOrEmpty)
             {
-                return JsonSerializer.Deserialize<List<Order>>(cachedOrders);
+                return JsonSerializer.Deserialize<List<OrderReadDTO>>(cachedOrders);
             }
 
             var orders = await _orderRepository.GetAllOrdersAsync();
-            var ordersList = orders.ToList();
-
+            var ordersDto = _mapper.Map<IEnumerable<OrderReadDTO>>(orders);
             var ttlMinutes = _configuration.GetValue<int>("CacheSettings:DefaultTTLInMinutes");
-            string jsonOrders = JsonSerializer.Serialize(ordersList);
+
+            string jsonOrders = JsonSerializer.Serialize(ordersDto);
             await _cache.StringSetAsync(cacheKey, jsonOrders, TimeSpan.FromMinutes(ttlMinutes));
 
-            return ordersList;
+            return ordersDto;
         }
+
         public async Task<IEnumerable<OrderReadDTO>> GetOrdersByUserIdAsync(int userId)
         {
             string cacheKey = $"orders_userId_{userId}";
@@ -75,10 +70,10 @@ namespace Service
             order.OrderDate = DateOnly.FromDateTime(DateTime.Now);
             order.Status = "Accepted";
             Order newOrder = await _orderRepository.AddOrder(order);
-            
+
             await _cache.KeyDeleteAsync("orders_all");
             await _cache.KeyDeleteAsync($"orders_userId_{newOrder.UserId}");
-            
+
             return _mapper.Map<OrderReadDTO>(newOrder);
         }
 

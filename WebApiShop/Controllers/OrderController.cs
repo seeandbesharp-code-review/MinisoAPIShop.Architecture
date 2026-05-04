@@ -1,8 +1,10 @@
 ﻿using DTOs;
 using Entities;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration.UserSecrets;
 using Service;
+using WebApiShop.Attributes;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -27,6 +29,7 @@ namespace WebApiShop.Controllers
             return "value";
         }
 
+        [AuthorizeAdmin]
         [HttpGet]
         public async Task<IActionResult> GetAllOrders()
         {
@@ -34,7 +37,7 @@ namespace WebApiShop.Controllers
             return Ok(orders);
         }
 
-
+        [Authorize]
         [HttpGet("user/{userId}")]
         public async Task<ActionResult<IEnumerable<OrderReadDTO>>> GetUserOrders(int userId)
         {
@@ -47,6 +50,7 @@ namespace WebApiShop.Controllers
         }
 
         // POST api/<OrderController>
+        [Authorize]
         [HttpPost]
         async public Task<ActionResult<OrderReadDTO>> Post([FromBody] OrderCreateDTO order)
         {
@@ -57,6 +61,7 @@ namespace WebApiShop.Controllers
         }
 
         // PUT api/<OrderController>/5
+        [Authorize]
         [HttpPut("{id}")]
         public async Task<IActionResult> Put(int id, [FromBody] ChangeOrderStatusDto dto)
         {
@@ -75,6 +80,7 @@ namespace WebApiShop.Controllers
         }
 
         // DELETE api/<OrderController>/5
+        [AuthorizeAdmin]
         [HttpDelete("{id}")]
         public void Delete(int id)
         {
