@@ -145,8 +145,8 @@ public partial class MyWebApiShopContext : DbContext
                 .HasMaxLength(50)
                 .IsUnicode(false);
             entity.Property(e => e.Password)
-                .HasMaxLength(50)
-                .IsUnicode(false);
+                .HasMaxLength(100)
+                .IsUnicode(true);
             entity.Property(e => e.Phone)
                 .HasMaxLength(10)
                 .IsFixedLength();

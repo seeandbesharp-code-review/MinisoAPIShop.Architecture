@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using BCrypt.Net;
 using DTOs;
 using Entities;
 using Microsoft.EntityFrameworkCore;
@@ -58,6 +59,8 @@ namespace Service
             return _mapper.Map<UserReadDTO>(user);
         }
 
+        private const int BcryptWorkFactor = 12;
+
         public async Task<UserReadDTO> AddUser(UserRegisterDTO userRegisterDto)
         {
             if (!_passwordService.IsPasswordStrong(userRegisterDto.Password))
@@ -71,14 +74,27 @@ namespace Service
             }
 
             User user = _mapper.Map<User>(userRegisterDto);
+            user.Role = "User";
+            user.Password = BCrypt.Net.BCrypt.HashPassword(userRegisterDto.Password, BcryptWorkFactor);
+
             User newUser = await _userRepository.AddUser(user);
             return _mapper.Map<UserReadDTO>(newUser);
         }
 
         public async Task<UserReadDTO> LoginUser(UserLoginDTO userLoginDto)
         {
-            User userCredentials = _mapper.Map<User>(userLoginDto);
-            User user = await _userRepository.LoginUser(userCredentials);
+            User user = await _userRepository.GetUserByEmailAsync(userLoginDto.Email);
+            if (user == null)
+            {
+                return null;
+            }
+
+            bool passwordValid = BCrypt.Net.BCrypt.Verify(userLoginDto.Password, user.Password);
+            if (!passwordValid)
+            {
+                return null;
+            }
+
             return _mapper.Map<UserReadDTO>(user);
         }
 
